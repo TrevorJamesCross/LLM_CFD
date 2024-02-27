@@ -1,6 +1,46 @@
 outs:
-- md5: 54e24c4e256800008de19b8b27baa2c3.dir
-  size: 9320801
-  nfiles: 6
-  hash: md5
+- hash: md5
   path: data
+  files:
+  - relpath: raw/game_data.csv
+    md5: 382b2de9d8e8f5a77c39610bbad95ea7
+    size: 9194027
+    cloud:
+      gcp-bucket:
+        etag: 08e7f2fddbe8cb84031001
+        version_id: '1709047136876903'
+  - relpath: raw/game_data.csv.mlem
+    md5: 772e624961256f34332a8b5220c156a3
+    size: 1350
+    cloud:
+      gcp-bucket:
+        etag: 08f6a1e2d8e8cb84031001
+        version_id: '1709047130132726'
+  - relpath: raw/recr_data.csv
+    md5: bff827e1cfc2ece21d678c7e2aad1a3d
+    size: 112618
+    cloud:
+      gcp-bucket:
+        etag: 08c4c9f6d8e8cb84031001
+        version_id: '1709047130465476'
+  - relpath: raw/recr_data.csv.mlem
+    md5: 6e89464b628d711c2c96844b3953b1a3
+    size: 405
+    cloud:
+      gcp-bucket:
+        etag: 0888fceed8e8cb84031001
+        version_id: '1709047130340872'
+  - relpath: raw/team_data.csv
+    md5: 851861b71dfb9ea92689afd1ddb691c3
+    size: 11789
+    cloud:
+      gcp-bucket:
+        etag: 08cff3d6d8e8cb84031001
+        version_id: '1709047129946575'
+  - relpath: raw/team_data.csv.mlem
+    md5: f6eb42c3699049e318db621f1d17d168
+    size: 612
+    cloud:
+      gcp-bucket:
+        etag: 08ef94efd8e8cb84031001
+        version_id: '1709047130344047'
