@@ -1,0 +1,6 @@
+[core]
+    remote = gcp-bucket
+    autostage = true
+['remote "gcp-bucket"']
+    url = gs://llm-cfd-bucket
+    version_aware = true
