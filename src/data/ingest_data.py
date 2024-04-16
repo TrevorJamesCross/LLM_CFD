@@ -1,7 +1,7 @@
 """
 Large Language Model College Football Data: Ingest Raw Data
 Author: Trevor Cross
-Last Updated: 02/27/24
+Last Updated: 04/10/24
 
 Initial ETL of data from collegefootballdata.com. Extract available data,
 fix column issues, remove unwanted columns, and save locally as CSV.
@@ -33,7 +33,7 @@ from toolbox import *
 #-- ----------------------------
 
 # get API key
-key_path = os.path.join('..', '..', 'secrets', 'cfd_api_key.json')
+key_path = os.path.join('.secrets', 'cfd_api_key.json')
 with open(key_path) as json_file:
     api_key = json.load(json_file)['api_key']
 
