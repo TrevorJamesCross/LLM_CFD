@@ -1,0 +1,7 @@
+[
+    {
+        "input": "How many games did Wisconsin win in 2017?",
+        "sql_query": example_query,
+        "answer": f"Wisconsin won 13 games in the 2017 season. This is the query I used: \n{example_query}"
+    }
+]

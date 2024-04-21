@@ -1,9 +1,9 @@
 """
 Large Language Model College Football Data: Server
 Author: Trevor Cross
-Last Updated: 04/16/24
+Last Updated: 04/19/24
 
-Build and server langchain agent w/ SQL toolkit & conversational memory.
+Build and serve langchain agent to interact w/ BigQuery database and answer questions.
 """
 
 # ----------------------
@@ -17,14 +17,16 @@ from langserve import add_routes
 
 # import langchain libraries
 from langchain_core.prompts import (
+    PromptTemplate,
+    ChatPromptTemplate,
+    FewShotPromptTemplate,
     SystemMessagePromptTemplate,
-    MessagesPlaceholder,
-    ChatPromptTemplate
+    MessagesPlaceholder
     )
-from langchain_community.agent_toolkits import create_sql_agent
 from langchain.sql_database import SQLDatabase
 from langchain_openai import ChatOpenAI
-from langchain.agents import AgentExecutor
+from langchain_community.llms import Ollama
+from langchain_community.agent_toolkits import create_sql_agent
 
 # import support libraries
 import sys
@@ -57,18 +59,56 @@ openai_key = json_to_dict(openai_key_path)['api_key']
 # ---Define Prompt Template---
 # ----------------------------
 
-# define system prefix
-sys_message = """You are an agent designed to interact with Google BigQuery SQL database. Given an input question, create a syntactically correct GoogleSQL query to run, then look at the results of the query and return the answer. You have access to tools for interacting with the databse. Only use the given tools. Only use the information returned by the tools to construct your final answer. You must double check your query before executing it, making sure you query existing tables and fields. If you get an error while executing a query, rewrite the query and try again.
+# create system prefix
+sys_prefix = """
+You are an agent designed to interact with Google BigQuery SQL database containing data on college football. Given an input question, create a syntactically correct GoogleSQL query to run, then look at the results of the query, and return the query and answer. You have access to tools for interacting with the databse. Only use the given tools. Only use the information returned by the tools to construct your final answer. You must obtain schema information on all available tables before writing SQL queries. You must double check your query before executing it, making sure you query existing tables and fields. If you get an error while executing a query, rewrite the query and try again.
 
 Do not make any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the databse.
 
-If the question does not seem to be related to the databse, just return "I'm unable to answer that." as the answer."""
+If the question does not seem to be related to the database and college football, don't return anything for the SQL query and only return "I'm unable to answer that." as the answer.
 
-# create prompt template
-prompt_template = ChatPromptTemplate.from_messages(
+Make sure to list all available table info with a couple rows using GoogleSQL before executing any other queries. You may have to use subqueries to get your final answer.
+
+The following are examples of input questions, and output SQL queries and answers:
+"""
+
+# define examples
+example_query = """SELECT COUNT(*) as total_wins FROM `llm-cfd.raw.game_data` WHERE (home_team="Wisconsin" AND home_points>away_points AND season=2017) OR (away_team="Wisconsin" AND home_points<away_points AND season=2017)"""
+
+examples = [
+    {
+        "input": "How many games did Wisconsin win in 2017?",
+        "sql_query": example_query,
+        "answer": f"Wisconsin won 13 games in the 2017 season. This is the query I used: \n{example_query}"
+    }
+]
+
+# create example template
+example_template = """Input: {input}
+sql_query: {sql_query}
+answer: {answer}
+"""
+
+# create example prompt template
+example_prompt = PromptTemplate(
+    input_variables=["input", "sql_query", "answer"],
+    template=example_template
+    )
+
+# create few shot prompt template
+few_shot_prompt = FewShotPromptTemplate(
+    examples=examples,
+    example_prompt=example_prompt,
+    prefix=sys_prefix,
+    suffix="",
+    input_variables=["input"],
+    )
+
+# create final prompt template
+full_prompt = ChatPromptTemplate.from_messages(
     [
-        ("system", sys_message),
-        ("human", "{input}"),
+        SystemMessagePromptTemplate(prompt=few_shot_prompt),
+        ("user", "{input}"),
         MessagesPlaceholder("agent_scratchpad")
     ]
 )
@@ -87,14 +127,18 @@ llm = ChatOpenAI(
     openai_api_key=openai_key
     )
 
+#llm = Ollama(
+#    base_url='http://localhost:11434',
+#    model="duckdb-nsql"
+#    )
+
 # initialize LLM agent
 agent_executor = create_sql_agent(
     llm=llm,
     db=db,
-    agent_type="openai-tools",
-    #prompt=prompt_template,
+    prompt=full_prompt,
     verbose=True,
-    top_k=1000,
+    agent_type="openai-tools",
     )
 
 # ---------------------------
