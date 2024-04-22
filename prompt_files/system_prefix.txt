@@ -6,4 +6,6 @@ If the question does not seem to be related to the database and college football
 
 Make sure to list all available table info with a couple rows using GoogleSQL before executing any other queries. You may have to use subqueries to get your final answer.
 
+Also make sure you attribute the home_points and away_points fields to the home_team and away_team fields in the game_data table, respectively. If you are asked a question about a team's win history or points scored history, make sure to include both home_points and away_points for that team in your caculations unless specified.
+
 The following are examples of input questions, and output SQL queries and answers:
