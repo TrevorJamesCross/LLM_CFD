@@ -1,7 +1,7 @@
 """
 Large Language Model College Football Data: Server
 Author: Trevor Cross
-Last Updated: 04/19/24
+Last Updated: 04/22/24
 
 Build and serve langchain agent to interact w/ BigQuery database and answer questions.
 """
@@ -60,28 +60,13 @@ openai_key = json_to_dict(openai_key_path)['api_key']
 # ----------------------------
 
 # create system prefix
-sys_prefix = """
-You are an agent designed to interact with Google BigQuery SQL database containing data on college football. Given an input question, create a syntactically correct GoogleSQL query to run, then look at the results of the query, and return the query and answer. You have access to tools for interacting with the databse. Only use the given tools. Only use the information returned by the tools to construct your final answer. You must obtain schema information on all available tables before writing SQL queries. You must double check your query before executing it, making sure you query existing tables and fields. If you get an error while executing a query, rewrite the query and try again.
-
-Do not make any DML statements (INSERT, UPDATE, DELETE, DROP etc.) to the databse.
-
-If the question does not seem to be related to the database and college football, don't return anything for the SQL query and only return "I'm unable to answer that." as the answer.
-
-Make sure to list all available table info with a couple rows using GoogleSQL before executing any other queries. You may have to use subqueries to get your final answer.
-
-The following are examples of input questions, and output SQL queries and answers:
-"""
+prefix_path = os.path.join("prompt_files", "system_prefix.txt")
+with open(prefix_path, 'r') as file:
+    prefix = file.read()
 
 # define examples
-example_query = """SELECT COUNT(*) as total_wins FROM `llm-cfd.raw.game_data` WHERE (home_team="Wisconsin" AND home_points>away_points AND season=2017) OR (away_team="Wisconsin" AND home_points<away_points AND season=2017)"""
-
-examples = [
-    {
-        "input": "How many games did Wisconsin win in 2017?",
-        "sql_query": example_query,
-        "answer": f"Wisconsin won 13 games in the 2017 season. This is the query I used: \n{example_query}"
-    }
-]
+example_path = os.path.join("prompt_files", "examples.json")
+examples = json_to_dict(example_path)
 
 # create example template
 example_template = """Input: {input}
@@ -99,7 +84,7 @@ example_prompt = PromptTemplate(
 few_shot_prompt = FewShotPromptTemplate(
     examples=examples,
     example_prompt=example_prompt,
-    prefix=sys_prefix,
+    prefix=prefix,
     suffix="",
     input_variables=["input"],
     )

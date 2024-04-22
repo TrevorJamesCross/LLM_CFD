@@ -1,7 +1,19 @@
 [
     {
         "input": "How many games did Wisconsin win in 2017?",
-        "sql_query": example_query,
-        "answer": f"Wisconsin won 13 games in the 2017 season. This is the query I used: \n{example_query}"
+        "sql_query": "SELECT COUNT(*) AS total_wins FROM `llm-cfd.raw.game_data` WHERE (home-team='Wisconsin' AND home_points>away_points AND season=2017) OR (away_team='Wisconsin' AND home_points<away_points AND season=2017);",
+        "answer": "Wisconsin won 13 games in the 2017 season. This is the query I used: \nSELECT COUNT(*) AS total_wins FROM `llm-cfd.raw.game_data` WHERE (home-team='Wisconsin' AND home_points>away_points AND season=2017) OR (away_team='Wisconsin' AND home_points<away_points AND season=2017);"
+    },
+
+    {
+        "input": "What was the average points per game scored by LSU in 2021?",
+        "sql_query": "SELECT AVG(total_points) AS average_points FROM (SELECT (CASE WHEN home_team='LSU' THEN home_points WHEN away_team='LSU' THEN away_points ELSE NULL END) AS total_points FROM `llm-cfd.raw.game_data` WHERE (home_team='LSU' AND season=2021) OR (away_team='LSU' AND season=2021)) subquery;",
+        "answer": "LSU scored an average of 26.5 points per game in the 2021 season. This is the query I used: \nSELECT AVG(total_points) AS average_points FROM (SELECT (CASE WHEN home_team='LSU' THEN home_points WHEN away_team='LSU' THEN away_points ELSE NULL END) AS total_points FROM `llm-cfd.raw.game_data` WHERE (home_team='LSU' AND season=2021) OR (away_team='LSU' AND season=2021)) subquery;"
+    },
+
+    {
+        "input": "What is the win-loss record between Ohio State and Michigan in the last ten years? Assume the current year is 2024.",
+        "sql_query": "SELECT SUM(CASE WHEN winning_team = 'Michigan' THEN 1 ELSE 0 END) AS michigan_wins, SUM(CASE WHEN winning_team = 'Ohio State' THEN 1 ELSE 0 END) AS ohio_state_wins FROM (SELECT CASE WHEN home_team = 'Michigan' AND home_points > away_points THEN 'Michigan' WHEN away_team = 'Michigan' AND away_points > home_points THEN 'Michigan' WHEN home_team = 'Ohio State' AND home_points > away_points THEN 'Ohio State' WHEN away_team = 'Ohio State' AND away_points > home_points THEN 'Ohio State' ELSE NULL END AS winning_team FROM `llm-cfd.raw.game_data` WHERE (home_team = 'Michigan' AND away_team = 'Ohio State' AND season>=2014) OR (home_team = 'Ohio State' AND away_team = 'Michigan' AND season>=2014)) subquery;",
+        "answer": "In the last ten years, since 2014, Michigan won 3 games against Ohio State and Ohio State won 6 games. This is the query I used: \nSELECT SUM(CASE WHEN winning_team = 'Michigan' THEN 1 ELSE 0 END) AS michigan_wins, SUM(CASE WHEN winning_team = 'Ohio State' THEN 1 ELSE 0 END) AS ohio_state_wins FROM (SELECT CASE WHEN home_team = 'Michigan' AND home_points > away_points THEN 'Michigan' WHEN away_team = 'Michigan' AND away_points > home_points THEN 'Michigan' WHEN home_team = 'Ohio State' AND home_points > away_points THEN 'Ohio State' WHEN away_team = 'Ohio State' AND away_points > home_points THEN 'Ohio State' ELSE NULL END AS winning_team FROM `llm-cfd.raw.game_data` WHERE (home_team = 'Michigan' AND away_team = 'Ohio State' AND season>=2014) OR (home_team = 'Ohio State' AND away_team = 'Michigan' AND season>=2014)) subquery;"
     }
 ]
