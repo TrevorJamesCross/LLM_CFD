@@ -1,7 +1,7 @@
 """
 Large Language Model College Football Data: Server
 Author: Trevor Cross
-Last Updated: 04/22/24
+Last Updated: 04/24/24
 
 Build and serve langchain agent to interact w/ BigQuery database and answer questions.
 """
@@ -9,11 +9,6 @@ Build and serve langchain agent to interact w/ BigQuery database and answer ques
 # ----------------------
 # ---Import Libraries---
 # ----------------------
-
-# import server libraries
-from fastapi import FastAPI
-from fastapi.responses import RedirectResponse
-from langserve import add_routes
 
 # import langchain libraries
 from langchain_core.prompts import (
@@ -24,9 +19,16 @@ from langchain_core.prompts import (
     MessagesPlaceholder
     )
 from langchain.sql_database import SQLDatabase
+from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_openai import ChatOpenAI
 from langchain_community.llms import Ollama
-from langchain_community.agent_toolkits import create_sql_agent
+from langchain.memory import ConversationBufferWindowMemory
+from langchain.agents import AgentExecutor, create_openai_tools_agent
+
+# import server libraries
+from fastapi import FastAPI
+from fastapi.responses import RedirectResponse
+from langserve import add_routes
 
 # import support libraries
 import sys
@@ -59,17 +61,20 @@ openai_key = json_to_dict(openai_key_path)['api_key']
 # ---Define Prompt Template---
 # ----------------------------
 
-# create system prefix
+# pull system prefix
 prefix_path = os.path.join("prompt_files", "system_prefix.txt")
 with open(prefix_path, 'r') as file:
     prefix = file.read()
 
-# define examples
+# define system suffix
+suffix = "Here's the chat history:"
+
+# pull examples
 example_path = os.path.join("prompt_files", "examples.json")
 examples = json_to_dict(example_path)
 
 # create example template
-example_template = """Input: {input}
+example_template = """input: {input}
 sql_query: {sql_query}
 answer: {answer}
 """
@@ -85,14 +90,15 @@ few_shot_prompt = FewShotPromptTemplate(
     examples=examples,
     example_prompt=example_prompt,
     prefix=prefix,
-    suffix="",
-    input_variables=["input"],
+    suffix=suffix,
+    input_variables=["chat_history", "input"],
     )
 
 # create final prompt template
 full_prompt = ChatPromptTemplate.from_messages(
     [
         SystemMessagePromptTemplate(prompt=few_shot_prompt),
+        MessagesPlaceholder("chat_history"),
         ("user", "{input}"),
         MessagesPlaceholder("agent_scratchpad")
     ]
@@ -102,11 +108,18 @@ full_prompt = ChatPromptTemplate.from_messages(
 # ---Build LangChain Agent---
 # ---------------------------
 
+# initialize conversational memory object
+memory = ConversationBufferWindowMemory(
+    k=3,
+    memory_key="chat_history",
+    return_messages=True
+    )
+
 # initialize SQL DB
 db = SQLDatabase.from_uri(sqlalchemy_url)
 
-# initialize LLM
-llm = ChatOpenAI(
+# initialize chat LLM
+chat = ChatOpenAI(
     temperature=0,
     model="gpt-3.5-turbo",
     openai_api_key=openai_key
@@ -117,13 +130,25 @@ llm = ChatOpenAI(
 #    model="duckdb-nsql"
 #    )
 
-# initialize LLM agent
-agent_executor = create_sql_agent(
-    llm=llm,
+# initialize SQL DB toolkit
+sql_toolkit = SQLDatabaseToolkit(
     db=db,
-    prompt=full_prompt,
-    verbose=True,
-    agent_type="openai-tools",
+    llm=chat
+    )
+
+# initialize LLM agent w/ openai tools
+agent = create_openai_tools_agent(
+    llm=chat,
+    tools=sql_toolkit.get_tools(),
+    prompt=full_prompt
+    )
+
+# create agent w/ SQL DB tools
+agent_executor = AgentExecutor(
+    agent=agent,
+    tools=sql_toolkit.get_tools(),
+    memory=memory,
+    verbose=True
     )
 
 # ---------------------------
