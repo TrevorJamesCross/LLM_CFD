@@ -2,12 +2,14 @@
     {
         "input": "How many games did Wisconsin win in 2017?",
         "sql_query": "SELECT COUNT(*) AS total_wins FROM `llm-cfd.raw.game_data` WHERE (home-team='Wisconsin' AND home_points>away_points AND season=2017) OR (away_team='Wisconsin' AND home_points<away_points AND season=2017);",
-        "answer": "Wisconsin won 13 games in the 2017 season.",
+        "answer": "Wisconsin won 13 games in the 2017 season."
+    },
 
     {
         "input": "What was the average points per game scored by LSU in 2021?",
         "sql_query": "SELECT AVG(total_points) AS average_points FROM (SELECT (CASE WHEN home_team='LSU' THEN home_points WHEN away_team='LSU' THEN away_points ELSE NULL END) AS total_points FROM `llm-cfd.raw.game_data` WHERE (home_team='LSU' AND season=2021) OR (away_team='LSU' AND season=2021)) subquery;",
-        "answer": "LSU scored an average of 26.5 points per game in the 2021 season.",
+        "answer": "LSU scored an average of 26.5 points per game in the 2021 season."
+    },
 
     {
         "input": "What is the win-loss record between Ohio State and Michigan in the last ten years? Assume the current year is 2024.",

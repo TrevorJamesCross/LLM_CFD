@@ -19,11 +19,11 @@ from langchain_core.prompts import (
     MessagesPlaceholder
     )
 from langchain.sql_database import SQLDatabase
-from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_openai import ChatOpenAI
+from langchain_community.agent_toolkits import SQLDatabaseToolkit
 from langchain_community.llms import Ollama
 from langchain.memory import ConversationBufferWindowMemory
-from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain.agents import AgentExecutor, create_openai_tools_agent, create_sql_agent
 
 # import server libraries
 from fastapi import FastAPI
@@ -125,29 +125,18 @@ chat = ChatOpenAI(
     openai_api_key=openai_key
     )
 
-#llm = Ollama(
+#chat = ChatOllama(
 #    base_url='http://localhost:11434',
 #    model="duckdb-nsql"
 #    )
 
-# initialize SQL DB toolkit
-sql_toolkit = SQLDatabaseToolkit(
-    db=db,
-    llm=chat
-    )
-
-# initialize LLM agent w/ openai tools
-agent = create_openai_tools_agent(
+# create OpenAI tools agent w/ SQL DB tools
+agent = create_sql_agent(
     llm=chat,
-    tools=sql_toolkit.get_tools(),
-    prompt=full_prompt
-    )
-
-# create agent w/ SQL DB tools
-agent_executor = AgentExecutor(
-    agent=agent,
-    tools=sql_toolkit.get_tools(),
-    memory=memory,
+    db=db,
+    prompt=full_prompt,
+    agent_type='zero-shot-react-description',
+    agent_executor_kwargs={"memory": memory},
     verbose=True
     )
 
@@ -169,7 +158,7 @@ async def redirect_root_to_docs():
 # define primary (SQL DB) response
 add_routes(
     app,
-    agent_executor,
+    agent,
     path="/CFD",
     )
 
