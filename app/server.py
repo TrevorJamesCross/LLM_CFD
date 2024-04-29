@@ -20,10 +20,9 @@ from langchain_core.prompts import (
     )
 from langchain.sql_database import SQLDatabase
 from langchain_openai import ChatOpenAI
-from langchain_community.agent_toolkits import SQLDatabaseToolkit
-from langchain_community.llms import Ollama
-from langchain.memory import ConversationBufferWindowMemory
-from langchain.agents import AgentExecutor, create_openai_tools_agent, create_sql_agent
+from langchain.memory import ChatMessageHistory
+from langchain.agents import create_sql_agent, AgentExecutor
+from langchain_core.runnables.history import RunnableWithMessageHistory
 
 # import server libraries
 from fastapi import FastAPI
@@ -109,11 +108,7 @@ full_prompt = ChatPromptTemplate.from_messages(
 # ---------------------------
 
 # initialize conversational memory object
-memory = ConversationBufferWindowMemory(
-    k=3,
-    memory_key="chat_history",
-    return_messages=True
-    )
+ephemeral_chat_history = ChatMessageHistory()
 
 # initialize SQL DB
 db = SQLDatabase.from_uri(sqlalchemy_url)
@@ -125,19 +120,22 @@ chat = ChatOpenAI(
     openai_api_key=openai_key
     )
 
-#chat = ChatOllama(
-#    base_url='http://localhost:11434',
-#    model="duckdb-nsql"
-#    )
-
-# create OpenAI tools agent w/ SQL DB tools
+# create SQL agent
 agent = create_sql_agent(
     llm=chat,
     db=db,
     prompt=full_prompt,
-    agent_type='zero-shot-react-description',
-    agent_executor_kwargs={"memory": memory},
+    agent_type='openai-tools',
     verbose=True
+    )
+
+# create runnable to manage agent chat history
+agent_with_memory = RunnableWithMessageHistory(
+    agent,
+    lambda session_id: ephemeral_chat_history,
+    input_messages_key="input",
+    output_messages_key="output",
+    history_messages_key="chat_history"
     )
 
 # ---------------------------
@@ -158,7 +156,7 @@ async def redirect_root_to_docs():
 # define primary (SQL DB) response
 add_routes(
     app,
-    agent,
+    agent_with_memory,
     path="/CFD",
     )
 
