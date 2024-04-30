@@ -1,7 +1,7 @@
 """
-Large Language Model College Football Data: Server
+Large Language Model College Football Data: Streamlit Server
 Author: Trevor Cross
-Last Updated: 04/24/24
+Last Updated: 04/29/24
 
 Build and serve langchain agent to interact w/ BigQuery database and answer questions.
 """
@@ -141,27 +141,3 @@ agent_with_memory = RunnableWithMessageHistory(
 # ---------------------------
 # ---Define App Deployment---
 # ---------------------------
-
-# define app
-app = FastAPI(
-    title="LangChain Server",
-    description="An API server meant to query college football data in Google BigQuery",
-    )
-
-# define root response
-@app.get("/")
-async def redirect_root_to_docs():
-    return RedirectResponse("/docs")
-
-# define primary (SQL DB) response
-add_routes(
-    app,
-    agent_with_memory,
-    path="/CFD",
-    )
-
-# run app
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8000)
