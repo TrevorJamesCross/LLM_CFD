@@ -4,6 +4,8 @@ Author: Trevor Cross
 Last Updated: 04/29/24
 
 Build and serve langchain agent to interact w/ BigQuery database and answer questions.
+
+Remember to run this script with streamlit run apps/streamlit_server.py
 """
 
 # ----------------------
@@ -20,18 +22,17 @@ from langchain_core.prompts import (
     )
 from langchain.sql_database import SQLDatabase
 from langchain_openai import ChatOpenAI
-from langchain.memory import ChatMessageHistory
+from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from langchain.agents import create_sql_agent, AgentExecutor
 from langchain_core.runnables.history import RunnableWithMessageHistory
 
 # import server libraries
-from fastapi import FastAPI
-from fastapi.responses import RedirectResponse
-from langserve import add_routes
+import streamlit as st
 
 # import support libraries
 import sys
 import os
+import emoji # VERY IMPORTANT
 
 # import toolbox functions
 sys.path.append("src")
@@ -108,7 +109,7 @@ full_prompt = ChatPromptTemplate.from_messages(
 # ---------------------------
 
 # initialize conversational memory object
-ephemeral_chat_history = ChatMessageHistory()
+ephemeral_chat_history = StreamlitChatMessageHistory(key="chat_history")
 
 # initialize SQL DB
 db = SQLDatabase.from_uri(sqlalchemy_url)
@@ -141,3 +142,42 @@ agent_with_memory = RunnableWithMessageHistory(
 # ---------------------------
 # ---Define App Deployment---
 # ---------------------------
+
+# set session state
+if "chat_history"  not in st.session_state:
+    st.session_state["chat_history"] = []
+
+# set webpage config & title
+st.set_page_config(page_title="College Football Data")
+st.title(emoji.emojize(":american_football: College Football Data"))
+
+# initialize memory for streamlit
+if len(ephemeral_chat_history.messages) == 0:
+    init_greeting = "Howdy! My name's TJ, and I can answer questions about college football. What can I do for you?"
+    ephemeral_chat_history.add_ai_message(init_greeting)
+
+# view chat history
+view_messages = st.expander("View the message contents in session state")
+
+# render current messages from StreamlitChatMessageHistory
+for message in ephemeral_chat_history.messages:
+    st.chat_message(message.type).write(message.content)
+
+# when user inputs a new prompt, generate and draw a new response
+if user_input := st.chat_input():
+
+    # write user message to view
+    st.chat_message("human").write(user_input)
+
+    # get agent response
+    response = agent_with_memory.invoke(
+        {"input": user_input},
+        {"configurable": {"session_id": "mySession"}}
+        )
+
+    # write agent response to view
+    st.chat_message("ai").write(response["output"])
+
+# render newly generated messages to show up immediately
+with view_messages:
+    view_messages.json(st.session_state["chat_history"])
