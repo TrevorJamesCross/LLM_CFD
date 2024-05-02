@@ -1,7 +1,7 @@
 [
     {
         "input": "How many games did Wisconsin win in 2017?",
-        "sql_query": "SELECT COUNT(*) AS total_wins FROM `llm-cfd.raw.game_data` WHERE (home-team='Wisconsin' AND home_points>away_points AND season=2017) OR (away_team='Wisconsin' AND home_points<away_points AND season=2017);",
+        "sql_query": "SELECT COUNT(*) AS total_wins FROM `llm-cfd.raw.game_data` WHERE (home_team='Wisconsin' AND home_points>away_points AND season=2017) OR (away_team='Wisconsin' AND home_points<away_points AND season=2017);",
         "answer": "Wisconsin won 13 games in the 2017 season."
     },
 

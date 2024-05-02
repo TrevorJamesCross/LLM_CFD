@@ -149,16 +149,19 @@ if "chat_history"  not in st.session_state:
     st.session_state["chat_history"] = []
 
 # set webpage config & title
-st.set_page_config(page_title="College Football Data")
+st.set_page_config(page_title="LangChain SQL Agent: College Football Data")
 st.title(emoji.emojize(":american_football: College Football Data"))
+
+# view chat history
+view_messages = st.expander("View the message contents in session state")
 
 # initialize memory for streamlit
 if len(ephemeral_chat_history.messages) == 0:
     init_greeting = "Howdy! My name's TJ, and I can answer questions about college football. What can I do for you?"
-    ephemeral_chat_history.add_ai_message(init_greeting)
-
-# view chat history
-view_messages = st.expander("View the message contents in session state")
+    st.chat_message(
+        "ai",
+        avatar=emoji.emojize(":parrot:")
+        ).write(init_greeting)
 
 # render current messages from StreamlitChatMessageHistory
 for message in ephemeral_chat_history.messages:
@@ -168,7 +171,10 @@ for message in ephemeral_chat_history.messages:
 if user_input := st.chat_input():
 
     # write user message to view
-    st.chat_message("human").write(user_input)
+    st.chat_message(
+        "human",
+        avatar=emoji.emojize(":smiling_face_with_sunglasses:")
+        ).write(user_input)
 
     # get agent response
     response = agent_with_memory.invoke(
@@ -177,7 +183,10 @@ if user_input := st.chat_input():
         )
 
     # stream response chucks to view
-    st.chat_message("ai").write(response["output"])
+    st.chat_message(
+        "ai",
+        avatar=emoji.emojize(":parrot:")
+        ).write(response["output"])
 
 # render newly generated messages to show up immediately
 with view_messages:
