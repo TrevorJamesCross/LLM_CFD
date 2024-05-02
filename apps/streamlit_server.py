@@ -1,7 +1,7 @@
 """
 Large Language Model College Football Data: Streamlit Server
 Author: Trevor Cross
-Last Updated: 04/29/24
+Last Updated: 05/01/24
 
 Build and serve langchain agent to interact w/ BigQuery database and answer questions.
 
@@ -67,7 +67,7 @@ with open(prefix_path, 'r') as file:
     prefix = file.read()
 
 # define system suffix
-suffix = "Here's the chat history:"
+suffix = "Here is the table information:\n{table_info}\n And here's the chat history:"
 
 # pull examples
 example_path = os.path.join("prompt_files", "examples.json")
@@ -91,7 +91,7 @@ few_shot_prompt = FewShotPromptTemplate(
     example_prompt=example_prompt,
     prefix=prefix,
     suffix=suffix,
-    input_variables=["chat_history", "input"],
+    input_variables=["table_info", "chat_history", "input"],
     )
 
 # create final prompt template
@@ -111,8 +111,9 @@ full_prompt = ChatPromptTemplate.from_messages(
 # initialize conversational memory object
 ephemeral_chat_history = StreamlitChatMessageHistory(key="chat_history")
 
-# initialize SQL DB
+# initialize SQL DB & get table info
 db = SQLDatabase.from_uri(sqlalchemy_url)
+table_info = db.get_context()["table_info"]
 
 # initialize chat LLM
 chat = ChatOpenAI(
@@ -171,11 +172,11 @@ if user_input := st.chat_input():
 
     # get agent response
     response = agent_with_memory.invoke(
-        {"input": user_input},
+        {"input": user_input, "table_info": table_info},
         {"configurable": {"session_id": "mySession"}}
         )
 
-    # write agent response to view
+    # stream response chucks to view
     st.chat_message("ai").write(response["output"])
 
 # render newly generated messages to show up immediately
