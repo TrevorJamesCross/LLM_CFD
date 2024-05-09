@@ -1,7 +1,7 @@
 """
 Large Language Model College Football Data: FastAPI Server
 Author: Trevor Cross
-Last Updated: 05/08/24
+Last Updated: 05/09/24
 
 Build and serve langchain agent to interact w/ BigQuery database and answer questions.
 """
