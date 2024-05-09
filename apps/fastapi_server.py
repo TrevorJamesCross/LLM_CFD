@@ -1,7 +1,7 @@
 """
 Large Language Model College Football Data: FastAPI Server
 Author: Trevor Cross
-Last Updated: 04/29/24
+Last Updated: 05/08/24
 
 Build and serve langchain agent to interact w/ BigQuery database and answer questions.
 """
@@ -20,6 +20,7 @@ from langchain_core.prompts import (
     )
 from langchain.sql_database import SQLDatabase
 from langchain_openai import ChatOpenAI
+from langchain_community.chat_models import ChatOllama
 from langchain.memory import ChatMessageHistory
 from langchain.agents import create_sql_agent, AgentExecutor
 from langchain_core.runnables.history import RunnableWithMessageHistory
@@ -114,11 +115,18 @@ ephemeral_chat_history = ChatMessageHistory()
 db = SQLDatabase.from_uri(sqlalchemy_url)
 
 # initialize chat LLM
-chat = ChatOpenAI(
-    temperature=0,
-    model="gpt-3.5-turbo",
-    openai_api_key=openai_key
-    )
+if False:
+    chat = ChatOpenAI(
+        temperature=0,
+        model="gpt-3.5-turbo",
+        openai_api_key=openai_key
+        )
+else:
+    chat = ChatOllama(
+        model="llama3",
+        temperature=0,
+        base_url="http://localhost:11434"
+        )
 
 # create SQL agent
 agent = create_sql_agent(
